@@ -1,0 +1,329 @@
+<header class="topbar">
+  <div class="topbar-inner">
+    <div class="brand"><b>Quick<i>Bite</i></b><span>Diner intelligence</span></div>
+    <nav class="tabs" role="tablist" aria-label="Pages">
+      <button class="tab" role="tab" id="tab-overview" data-tab="overview">Overview</button>
+      <button class="tab" role="tab" id="tab-predictor" data-tab="predictor">Diner predictor</button>
+      <button class="tab" role="tab" id="tab-segments" data-tab="segments">Segments</button>
+      <button class="tab" role="tab" id="tab-rules" data-tab="rules">Basket rules</button>
+      <button class="tab" role="tab" id="tab-model" data-tab="model">Reorder model</button>
+      <button class="tab" role="tab" id="tab-atrisk" data-tab="atrisk">At-risk list</button>
+      <button class="tab" role="tab" id="tab-findings" data-tab="findings">Deeper findings</button>
+      <button class="tab" role="tab" id="tab-takeaways" data-tab="takeaways">Takeaways</button>
+    </nav>
+    <button class="learn-toggle" id="learnToggle" role="switch" aria-checked="true"><span class="switch" aria-hidden="true"></span>Learn mode</button>
+  </div>
+</header>
+
+<main>
+<!-- ===================================================== OVERVIEW -->
+<section class="page" id="page-overview" data-page="overview">
+  <div class="page-head">
+    <span class="eyebrow">QuickBite · 480 diners · 1,980 baskets</span>
+    <h1>Who our diners are, what they order, and who is slipping away</h1>
+    <p>Three segments explain almost everything: students who never leave, foodies on the fence, and families who drift off between big orders. Every number on this page is computed from <span class="num">diners.csv</span> and <span class="num">orders.csv</span>.</p>
+  </div>
+  <div class="learn" id="learn-overview">
+    <p>Use the tabs along the top. <b>Diner predictor</b> scores one diner the way the manager's app does. <b>Segments</b>, <b>Basket rules</b> and <b>Reorder model</b> show how each model was built, and you can change its settings. <b>At-risk list</b> is the weekly action list. Turn learn mode off to hide these notes.</p>
+  </div>
+  <div class="stats" id="ov-stats"></div>
+  <div class="seg-cards" id="ov-segcards"></div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h2>Monthly order value: kept vs lost</h2><p>AED per month, by segment</p></div>
+      <div class="chart" id="ov-value"></div>
+      <div class="learn"><p><b>How to read it:</b> each bar is one segment's monthly order value (orders per month × average order value, summed over its diners). The red part belongs to diners who did <i>not</i> reorder. That's the money at stake.</p></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Churn clock</h2><p>Reorder rate by days since last order</p></div>
+      <div class="chart" id="ov-clock"></div>
+      <div class="learn"><p>Each line shows how the chance of reordering falls as days pass since a diner's last order. The red line marks 50%. Where a segment crosses it is when to send a win-back offer.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== PREDICTOR -->
+<section class="page" id="page-predictor" data-page="predictor" hidden>
+  <div class="page-head">
+    <span class="eyebrow">Same models as app.py</span>
+    <h1>Diner predictor</h1>
+    <p>Enter a diner's profile to see their segment, how likely they are to reorder, what to recommend, and what to do next.</p>
+  </div>
+  <div class="strip" id="pred-strip">
+    <div class="persona-row" id="pred-personas"><span class="lab">Try a persona</span></div>
+    <div class="strip-grid">
+      <div class="ctl"><label for="in-age">Age <output id="out-age"></output></label><input type="range" id="in-age" min="18" max="70" step="1"></div>
+      <div class="ctl"><label for="in-opm">Orders / month <output id="out-opm"></output></label><input type="range" id="in-opm" min="1" max="20" step="1"></div>
+      <div class="ctl"><label for="in-aov">Avg order (AED) <output id="out-aov"></output></label><input type="range" id="in-aov" min="15" max="250" step="1"></div>
+      <div class="ctl"><label for="in-items">Items / order <output id="out-items"></output></label><input type="range" id="in-items" min="1" max="10" step="1"></div>
+      <div class="ctl"><label for="in-rec">Days since order <output id="out-rec"></output></label><input type="range" id="in-rec" min="0" max="60" step="1"></div>
+      <div class="ctl"><label for="in-disc">Discount use <output id="out-disc"></output></label><input type="range" id="in-disc" min="0" max="1" step="0.05"></div>
+      <div class="ctl"><label for="in-spend">Total spend (AED)</label><div class="spend-ctl"><input type="number" id="in-spend" min="50" max="20000" step="50"></div></div>
+      <div class="ctl thr"><label for="in-thr">At-risk threshold <output id="out-thr"></output></label><input type="range" id="in-thr" min="0.05" max="0.95" step="0.01"></div>
+    </div>
+  </div>
+  <div class="learn"><p>The sliders match the manager's Streamlit app (<span class="num">app.py</span>). The models are the saved <span class="num">food_models.joblib</span>, rebuilt in the browser from their exported weights, so every number here matches scikit-learn exactly. A diner is flagged <b>at risk</b> when their reorder chance is at or below the threshold. The app uses 50%.</p></div>
+
+  <div class="canvas" id="pred-canvas">
+    <div>
+      <span class="result-lab">Segment</span>
+      <div class="seg-name" id="pr-seg"></div>
+      <p class="small muted" id="pr-seg-why"></p>
+    </div>
+    <div>
+      <span class="result-lab">Reorder chance</span>
+      <div class="prob-row"><span class="prob-big num" id="pr-prob"></span><span id="pr-verdict"></span></div>
+      <p class="small muted" id="pr-prob-note"></p>
+    </div>
+    <div>
+      <span class="result-lab">Next best action</span>
+      <p class="action-text" id="pr-action"></p>
+    </div>
+  </div>
+
+  <div class="tracker" id="pr-tracker" aria-label="Delivery tracker: days since last order against the segment's win-back day">
+    <div class="tracker-head"><h2>Delivery tracker</h2><span id="tr-status"></span></div>
+    <div class="tracker-route" id="tr-route"></div>
+    <div class="tr-labels" id="tr-labels"></div>
+    <p class="small muted" id="tr-note"></p>
+  </div>
+
+  <div class="panel">
+    <div class="reco-row">
+      <div class="grid" style="gap:8px"><span class="result-lab">Recommended items for this segment</span><div class="items" id="pr-reco"></div></div>
+      <div class="grid" style="gap:8px"><span class="result-lab">Bundle to offer</span><div id="pr-bundle"></div></div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="subtabs" role="tablist" id="pr-subtabs">
+      <button class="subtab" role="tab" data-sub="drivers">What drives the score</button>
+      <button class="subtab" role="tab" data-sub="why">Why this segment</button>
+      <button class="subtab" role="tab" data-sub="map">Where they sit</button>
+      <button class="subtab" role="tab" data-sub="whatif">What-if curve</button>
+      <button class="subtab" role="tab" data-sub="bundles">Segment bundles</button>
+    </div>
+    <div id="pr-detail"></div>
+  </div>
+</section>
+
+<!-- ===================================================== SEGMENTS -->
+<section class="page" id="page-segments" data-page="segments" hidden>
+  <div class="page-head">
+    <span class="eyebrow">K-Means on 5 standardised behaviour features</span>
+    <h1>Segments</h1>
+    <p>Choose how many segments to split the 480 diners into. Three is the number both tests support, and it's the one saved for the app.</p>
+  </div>
+  <div class="strip">
+    <div class="controls">
+      <div class="ctl"><span class="lab">Number of segments (k)</span><div class="seg-btns" id="sg-k"></div></div>
+      <div class="ctl"><span class="lab">Map view</span><div class="seg-btns" id="sg-view"></div></div>
+      <div class="ctl" id="sg-fxy" hidden><span class="lab">Axes</span><div style="display:flex;gap:6px;flex-wrap:wrap"><select id="sg-fx" aria-label="x axis feature"></select><select id="sg-fy" aria-label="y axis feature"></select></div></div>
+    </div>
+  </div>
+  <div class="learn"><p><b>K-Means</b> places k centres and assigns every diner to the nearest one, then moves each centre to the middle of its diners until nothing changes. The features are standardised first (shown in "standard deviations from average"), so order value in AED doesn't drown out discount rate, which only runs from 0 to 1.</p></div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h2>Elbow</h2><p>Within-segment spread (inertia)</p></div>
+      <div class="chart short" id="sg-elbow"></div>
+      <div class="learn"><p>Inertia always falls as k grows. Look for the "elbow" where adding a segment stops buying much. Here the big drop ends at k = 3.</p></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Silhouette</h2><p>How cleanly diners separate (higher is better)</p></div>
+      <div class="chart short" id="sg-sil"></div>
+      <div class="learn"><p>Silhouette compares each diner's distance to its own segment with the distance to the next nearest. Near 1 means clearly separated; near 0 means on the border. k = 3 scores highest.</p></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2 id="sg-map-title">Segment map</h2><p id="sg-map-note"></p></div>
+    <div class="chart tall" id="sg-map"></div>
+    <div class="legend-inline" id="sg-legend"></div>
+  </div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h2>Profile</h2><div class="seg-btns" id="sg-prof"></div></div>
+      <div class="chart tall" id="sg-profile"></div>
+      <div class="learn"><p>Values are z-scores: 0 is the average diner, +1 is one standard deviation above average. Age, total spend and reorder rate were <i>not</i> used to form the segments; they're shown to describe them.</p></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Spread within each segment</h2><select id="sg-box" aria-label="feature for box plot"></select></div>
+      <div class="chart tall" id="sg-boxplot"></div>
+      <div class="learn"><p>A box plot shows the middle half of a segment (the box), the median (the line inside) and the range (the whiskers). Overlapping boxes mean that feature alone can't tell those segments apart.</p></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2>Segment table</h2><button class="btn hidden-dl" id="sg-dl" hidden>Download CSV</button></div>
+    <div class="table-wrap" id="sg-table"></div>
+  </div>
+</section>
+
+<!-- ===================================================== RULES -->
+<section class="page" id="page-rules" data-page="rules" hidden>
+  <div class="page-head">
+    <span class="eyebrow">Apriori · each order is one basket</span>
+    <h1>Basket rules</h1>
+    <p>Which items are ordered together more often than chance, overall and within each segment.</p>
+  </div>
+  <div class="strip">
+    <div class="controls">
+      <div class="ctl"><span class="lab">Baskets from</span><div class="seg-btns" id="ru-scope"></div></div>
+      <div class="ctl" style="width:170px"><label for="ru-ms">Min support <output id="ru-ms-o"></output></label><input type="range" id="ru-ms" min="0.01" max="0.25" step="0.01"></div>
+      <div class="ctl" style="width:170px"><label for="ru-mc">Min confidence <output id="ru-mc-o"></output></label><input type="range" id="ru-mc" min="0" max="1" step="0.05"></div>
+      <div class="ctl" style="width:170px"><label for="ru-ml">Min lift <output id="ru-ml-o"></output></label><input type="range" id="ru-ml" min="0" max="10" step="0.1"></div>
+      <div class="ctl"><label for="ru-rank">Rank by</label><select id="ru-rank"><option value="lift">Lift</option><option value="conf">Confidence</option><option value="s">Support</option></select></div>
+      <div class="ctl"><label for="ru-item">Involving item</label><select id="ru-item"></select></div>
+      <label class="check"><input type="checkbox" id="ru-dedup">Hide mirrored rules</label>
+    </div>
+  </div>
+  <div class="learn"><p><b>Support</b> is how often the combination appears in all baskets. <b>Confidence</b> is how often the second part appears when the first part is in the basket. <b>Lift</b> is confidence divided by how common the second part is anyway: 1 means no link, 3 means three times as likely. A rule and its mirror (A → B and B → A) share the same lift, so by default only the more confident direction is shown.</p></div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h2>Rules</h2><span class="small muted" id="ru-count"></span></div>
+      <div class="table-wrap table-scroll" id="ru-table"></div>
+      <span class="small muted">Select a rule to explain it.</span>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Explain this rule</h2></div>
+      <div id="ru-explain"></div>
+      <div class="panel-head" style="margin-top:6px"><h3>The same rule in each segment</h3></div>
+      <div class="chart short" id="ru-compare"></div>
+      <p class="small muted" id="ru-compare-note"></p>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><div class="grid" style="gap:2px"><h2>Item pairs</h2><span class="small muted">Blank cells: never in the same basket</span></div><div class="seg-btns" id="ru-heat-mode"></div></div>
+    <div class="chart tall" id="ru-heat"></div>
+    <div class="learn"><p>Every cell is a pair of items. In lift mode, warm cells go together more than chance, cool cells less, and grey is about chance. Switch the scope to a segment to see that the very high overall lifts shrink. Much of the overall "pairing" is really "both items belong to the same segment's menu".</p></div>
+  </div>
+</section>
+
+<!-- ===================================================== MODEL -->
+<section class="page" id="page-model" data-page="model" hidden>
+  <div class="page-head">
+    <span class="eyebrow">Predicting <span class="num">reordered</span> from 7 inputs</span>
+    <h1>Reorder model</h1>
+    <p>Compare five models, move the threshold and put a price on each kind of mistake. The chosen model is balanced logistic regression.</p>
+  </div>
+  <div class="strip">
+    <div class="controls">
+      <div class="ctl"><label for="mo-m">Model</label><select id="mo-m"></select></div>
+      <div class="ctl"><span class="lab">Test set size</span><div class="seg-btns" id="mo-ts"></div></div>
+      <div class="ctl" style="width:200px"><label for="mo-thr">At-risk threshold <output id="mo-thr-o"></output></label><input type="range" id="mo-thr" min="0.01" max="0.99" step="0.01"></div>
+      <div class="ctl"><label for="mo-v">Voucher cost (AED)</label><input type="number" id="mo-v" min="0" max="1000" step="5"></div>
+      <div class="ctl"><label for="mo-l">Lost diner cost (AED)</label><input type="number" id="mo-l" min="0" max="10000" step="50"></div>
+    </div>
+  </div>
+  <div class="learn"><p>A <b>missed churner</b> (the model says "will reorder" but the diner leaves) costs about a month of that diner's orders; AED 700 is the average churner. A <b>false alarm</b> (the model says "at risk" but the diner would have stayed) costs one unneeded voucher. Because a missed churner costs far more, the model should catch churners even at the price of some extra vouchers.</p></div>
+  <div class="stats" id="mo-stats"></div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h2>Confusion matrix</h2><span class="small muted" id="mo-cm-note"></span></div>
+      <div id="mo-cm"></div>
+      <div class="learn"><p>Rows are what actually happened; columns are what the model predicted. Green cells are correct. The red cell is the expensive mistake (missed churners); the amber cell is the cheap one (false alarms).</p></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><div class="seg-btns" id="mo-view"></div><button class="btn primary" id="mo-cheapest">Use cheapest threshold</button></div>
+      <div class="chart" id="mo-chart"></div>
+      <p class="small muted" id="mo-chart-note"></p>
+    </div>
+  </div>
+  <div class="grid-2">
+    <div class="panel">
+      <div class="panel-head"><h2>What drives it</h2><span class="small muted" id="mo-drv-note"></span></div>
+      <div class="chart" id="mo-drivers"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-head"><h2>Where the mistakes fall</h2><span class="small muted">test set, by segment</span></div>
+      <div class="chart" id="mo-errors"></div>
+    </div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2>All models</h2><span class="small muted" id="mo-all-note"></span></div>
+    <div class="table-wrap" id="mo-all"></div>
+    <div class="learn" id="mo-verify"></div>
+  </div>
+</section>
+
+<!-- ===================================================== AT RISK -->
+<section class="page" id="page-atrisk" data-page="atrisk" hidden>
+  <div class="page-head">
+    <span class="eyebrow">Run weekly</span>
+    <h1>At-risk list</h1>
+    <p>Every diner scored with the saved model, ranked by the monthly order value at risk. Filter it, then export the list for the win-back campaign.</p>
+  </div>
+  <div class="strip">
+    <div class="controls">
+      <div class="ctl"><span class="lab">Segments</span><div class="chips" id="ar-segs"></div></div>
+      <div class="ctl" style="width:200px"><label for="ar-thr">Reorder chance at most <output id="ar-thr-o"></output></label><input type="range" id="ar-thr" min="0.05" max="1" step="0.01"></div>
+      <div class="ctl" style="width:180px"><label for="ar-rec">Days since order ≥ <output id="ar-rec-o"></output></label><input type="range" id="ar-rec" min="0" max="34" step="1"></div>
+      <div class="ctl"><label for="ar-sort">Sort by</label><select id="ar-sort"><option value="var">Value at risk</option><option value="p">Reorder chance (lowest first)</option><option value="rec">Days since order (longest first)</option></select></div>
+      <div class="ctl"><label for="ar-q">Find diner</label><input type="search" id="ar-q" placeholder="e.g. D1293" autocomplete="off"></div>
+    </div>
+  </div>
+  <div class="learn"><p><b>Value at risk</b> = monthly order value × (1 − reorder chance): the AED per month you expect to lose if nothing is done. 360 of these 480 diners were used to train the model, so treat this as an operational list, not a test score.</p></div>
+  <div class="stats" id="ar-stats"></div>
+  <div class="panel">
+    <div class="panel-head"><h2>Reorder chance vs days since last order</h2><span class="small muted">Highlighted diners match the filters</span></div>
+    <div class="chart" id="ar-chart"></div>
+  </div>
+  <div class="panel">
+    <div class="panel-head"><h2>Diners to contact</h2><div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="ar-more">Show all</button><button class="btn primary hidden-dl" id="ar-dl" hidden>Download CSV</button></div></div>
+    <div class="table-wrap" id="ar-table"></div>
+  </div>
+</section>
+
+<!-- ===================================================== FINDINGS -->
+<section class="page" id="page-findings" data-page="findings" hidden>
+  <div class="page-head">
+    <span class="eyebrow">Beyond the brief</span>
+    <h1>Deeper findings</h1>
+    <p>Three things the data says that the standard analysis would miss.</p>
+  </div>
+  <div class="subtabs" role="tablist" id="fd-subtabs">
+    <button class="subtab" role="tab" data-sub="f1">One rule nearly matches the model</button>
+    <button class="subtab" role="tab" data-sub="f2">Each segment has its own churn clock</button>
+    <button class="subtab" role="tab" data-sub="f5">Segments are real</button>
+  </div>
+  <div id="fd-f1" class="page" data-fsub="f1">
+    <div class="strip"><div class="controls">
+      <div class="ctl" style="width:260px"><label for="f1-cut">Reorder if ordered within <output id="f1-cut-o"></output></label><input type="range" id="f1-cut" min="0" max="30" step="1"></div>
+      <button class="btn" id="f1-best">Use best cut-off</button>
+    </div></div>
+    <div class="stats" id="f1-stats"></div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-head"><h2>Accuracy of a single recency rule</h2><span class="small muted">all 480 diners</span></div><div class="chart" id="f1-curve"></div></div>
+      <div class="panel"><div class="panel-head"><h2>Each input on its own</h2><span class="small muted">ROC-AUC, 0.5 = coin flip</span></div><div class="chart" id="f1-auc"></div></div>
+    </div>
+    <div class="panel"><div class="panel-head"><h2>Rule vs models</h2><span class="small muted">5-fold cross-validation on all 480 diners</span></div><div class="table-wrap" id="f1-table"></div>
+      <div class="explain"><b>Is this data leakage?</b><p>If <span class="num">days_since_last_order</span> was measured <i>after</i> the window in which <span class="num">reordered</span> was recorded, a diner who reordered has a recent last order by definition, and the model is partly reading the answer from its inputs. QuickBite should confirm that recency was measured at the snapshot date and that reorders were counted afterwards. Until then, treat about 86% as an upper bound.</p></div>
+    </div>
+  </div>
+  <div id="fd-f2" class="page" data-fsub="f2" hidden>
+    <div class="strip"><div class="controls"><div class="ctl"><span class="lab">View</span><div class="seg-btns" id="f2-view"></div></div></div></div>
+    <div class="stats" id="f2-stats"></div>
+    <div class="panel"><div class="panel-head"><h2 id="f2-title">Reorder rate by recency band</h2><span class="small muted" id="f2-note"></span></div><div class="chart tall" id="f2-chart"></div>
+      <div class="learn"><p>The trigger day is the start of the first recency band where at most 50% of a segment reorder (bands with fewer than 5 diners are hidden). It is the latest day to send the win-back offer.</p></div></div>
+    <div class="panel"><div class="panel-head"><h2>Reorder rate and diners per band</h2></div><div class="table-wrap" id="f2-table"></div></div>
+  </div>
+  <div id="fd-f5" class="page" data-fsub="f5" hidden>
+    <div class="strip"><div class="controls"><div class="ctl"><label for="f5-drop">Re-cluster without</label><select id="f5-drop"></select></div></div></div>
+    <div class="stats" id="f5-stats"></div>
+    <div class="grid-2">
+      <div class="panel"><div class="panel-head"><h2>Silhouette when one feature is dropped</h2><span class="small muted">labels show agreement (ARI) with the saved segments</span></div><div class="chart" id="f5-chart"></div></div>
+      <div class="panel"><div class="panel-head"><h2>Saved segments vs new clusters</h2></div><div class="table-wrap" id="f5-table"></div>
+        <div class="learn"><p>The <b>adjusted Rand index (ARI)</b> measures how well two groupings agree, ignoring the cluster numbers: 1.0 is identical, 0 is no better than random. If the segments were just "recent vs lapsed" diners, dropping recency would scramble them. It doesn't.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================== TAKEAWAYS -->
+<section class="page" id="page-takeaways" data-page="takeaways" hidden>
+  <div class="page-head">
+    <span class="eyebrow">For QuickBite management</span>
+    <h1>Takeaways</h1>
+    <p>Five decisions the analysis supports. Numbers update when you change the model settings on the Reorder model page.</p>
+  </div>
+  <div id="tk-body" class="page"></div>
+</section>
+</main>
+<div class="toast" id="toast" hidden role="status"></div>

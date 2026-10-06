@@ -1,0 +1,12 @@
+# Versions used to build and test this submission.
+# scikit-learn is pinned because food_models.joblib was saved with it;
+# loading the file with a different version can warn or fail.
+scikit-learn==1.9.1
+pandas>=2.2
+numpy>=1.26
+matplotlib>=3.8
+seaborn>=0.13
+mlxtend>=0.23
+streamlit>=1.35
+joblib>=1.3
+scipy>=1.11
