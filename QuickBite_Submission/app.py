@@ -6,13 +6,18 @@
 import streamlit as st
 import pandas as pd
 import joblib
+from pathlib import Path
+
+# Load the model file from the same folder as this script, wherever the app is started from
+# (Streamlit Cloud runs apps from the repository root, not from the app's own folder).
+MODEL_PATH = Path(__file__).resolve().parent / "food_models.joblib"
 
 st.set_page_config(page_title="QuickBite Diner Intelligence", page_icon="🍔")
 
 
 @st.cache_resource
 def load_models():
-    return joblib.load("food_models.joblib")
+    return joblib.load(MODEL_PATH)
 
 
 M = load_models()
